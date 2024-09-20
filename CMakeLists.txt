@@ -29,8 +29,6 @@ endif()
 option(INSIGHTS_USE_SYSTEM_INCLUDES "Elevate to system includes" Off)
 option(INSIGHTS_COVERAGE            "Enable code coverage"       Off)
 option(INSIGHTS_STATIC              "Use static linking"         Off)
-option(CLANG_LINK_CLANG_DYLIB       "link clang with dylib"      Off)
-option(LLVM_LINK_LLVM_DYLIB         "link llvm with dylib"       Off)
 
 set(INSIGHTS_LLVM_CONFIG "llvm-config" CACHE STRING "LLVM config executable to use")
 
