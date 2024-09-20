@@ -15,10 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - name: Install dependencies
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install librime-dev
+          sudo apt-get -y install llvm-dev libclang-dev
       - uses: nvim-neorocks/luarocks-tag-release@v5
         env:
           LUAROCKS_API_KEY: ${{secrets.LUAROCKS_API_KEY}}
