@@ -26,9 +26,11 @@ else()
     set(INSIGHTS_USE_LIBCPP           Off)
 endif()
 
-option(INSIGHTS_USE_SYSTEM_INCLUDES "Elevate to system includes" On )
+option(INSIGHTS_USE_SYSTEM_INCLUDES "Elevate to system includes" Off)
 option(INSIGHTS_COVERAGE            "Enable code coverage"       Off)
 option(INSIGHTS_STATIC              "Use static linking"         Off)
+option(CLANG_LINK_CLANG_DYLIB       "link clang with dylib"      Off)
+option(LLVM_LINK_LLVM_DYLIB         "link llvm with dylib"       Off)
 
 set(INSIGHTS_LLVM_CONFIG "llvm-config" CACHE STRING "LLVM config executable to use")
 
@@ -616,18 +618,18 @@ if (NOT WIN32)
 
 
     # add a target to generate API documentation with Doxygen
-    find_package(Doxygen)
-    if(DOXYGEN_FOUND)
-        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-        add_custom_target(doc
-            ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMENT "Generating API documentation with Doxygen" VERBATIM
-            COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/docs/postProcessDoxygen.py ${CMAKE_CURRENT_BINARY_DIR}/html
-        )
+    # find_package(Doxygen)
+    # if(DOXYGEN_FOUND)
+    #     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+    #     add_custom_target(doc
+    #         ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    #         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    #         COMMENT "Generating API documentation with Doxygen" VERBATIM
+    #         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/docs/postProcessDoxygen.py ${CMAKE_CURRENT_BINARY_DIR}/html
+    #     )
 
-        add_dependencies(doc gen-options)
-    endif()
+    #     add_dependencies(doc gen-options)
+    # endif()
 endif ()
 
 # XXX: hack to allow coverage build to run tests which fail
