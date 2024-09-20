@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
+set(BUILD_INSIGHTS_OUTSIDE_LLVM ON)
+include(FetchContent)
+FetchContent_Declare(
+  cppinsights
+  GIT_REPOSITORY https://github.com/andreasfertig/cppinsights
+  GIT_TAG cba412fbd7c6528f77d4d0cedbf64e2b2eb35542
+)
+FetchContent_MakeAvailable(cppinsights)
+message("foo: ${cppinsights_SOURCE_DIR}")
+
 # For better control enable MSVC_RUNTIME_LIBRARY target property
 # see https://cmake.org/cmake/help/latest/policy/CMP0091.html
 if(POLICY CMP0091)
@@ -26,7 +36,7 @@ else()
     set(INSIGHTS_USE_LIBCPP           Off)
 endif()
 
-option(INSIGHTS_USE_SYSTEM_INCLUDES "Elevate to system includes" Off)
+option(INSIGHTS_USE_SYSTEM_INCLUDES "Elevate to system includes" On )
 option(INSIGHTS_COVERAGE            "Enable code coverage"       Off)
 option(INSIGHTS_STATIC              "Use static linking"         Off)
 option(CLANG_LINK_CLANG_DYLIB       "link clang with dylib"      On )
@@ -481,7 +491,7 @@ endif()
 message(STATUS "Generating version.h")
 
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/cppinsights/version.h.in
+  ${cppinsights_SOURCE_DIR}/version.h.in
   ${CMAKE_BINARY_DIR}/generated/version.h
 )
 
@@ -530,17 +540,17 @@ set(CMAKE_SHARED_MODULE_PREFIX "")
 add_clang_tool(cppinsights
     cppinsights.c
     Insights_.cpp
-    cppinsights/ASTHelpers.cpp
-    cppinsights/CodeGenerator.cpp
-    cppinsights/CfrontCodeGenerator.cpp
-    cppinsights/CoroutinesCodeGenerator.cpp
-    cppinsights/DPrint.cpp
-    # cppinsights/Insights.cpp
-    cppinsights/InsightsHelpers.cpp
-    cppinsights/LifetimeTracker.cpp
-    cppinsights/OutputFormatHelper.cpp
+    ${cppinsights_SOURCE_DIR}/ASTHelpers.cpp
+    ${cppinsights_SOURCE_DIR}/CodeGenerator.cpp
+    ${cppinsights_SOURCE_DIR}/CfrontCodeGenerator.cpp
+    ${cppinsights_SOURCE_DIR}/CoroutinesCodeGenerator.cpp
+    ${cppinsights_SOURCE_DIR}/DPrint.cpp
+    # ${cppinsights_SOURCE_DIR}/Insights.cpp
+    ${cppinsights_SOURCE_DIR}/InsightsHelpers.cpp
+    ${cppinsights_SOURCE_DIR}/LifetimeTracker.cpp
+    ${cppinsights_SOURCE_DIR}/OutputFormatHelper.cpp
 )
-target_include_directories(cppinsights PRIVATE cppinsights "${LUA_INCDIR}")
+target_include_directories(cppinsights PRIVATE "${cppinsights_SOURCE_DIR}" "${LUA_INCDIR}")
 target_link_directories(cppinsights PRIVATE "${LUA_LIBDIR}")
 STRING(REPLACE " " ";" LUA_CFLAGS "${CFLAGS}")
 STRING(REPLACE " " ";" LUA_LIBFLAGS "${LIBFLAGS}")
@@ -618,18 +628,18 @@ if (NOT WIN32)
 
 
     # add a target to generate API documentation with Doxygen
-    # find_package(Doxygen)
-    # if(DOXYGEN_FOUND)
-    #     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-    #     add_custom_target(doc
-    #         ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-    #         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    #         COMMENT "Generating API documentation with Doxygen" VERBATIM
-    #         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/docs/postProcessDoxygen.py ${CMAKE_CURRENT_BINARY_DIR}/html
-    #     )
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+        add_custom_target(doc
+            ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            COMMENT "Generating API documentation with Doxygen" VERBATIM
+            COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/docs/postProcessDoxygen.py ${CMAKE_CURRENT_BINARY_DIR}/html
+        )
 
-    #     add_dependencies(doc gen-options)
-    # endif()
+        add_dependencies(doc gen-options)
+    endif()
 endif ()
 
 # XXX: hack to allow coverage build to run tests which fail
@@ -648,199 +658,199 @@ if(INSIGHTS_USE_LIBCPP)
     set(TEST_USE_LIBCPP "--use-libcpp")
 endif()
 
-# Look for Python3, only relevant for target tests. As linux currently ships cmake 3.11.4 we need to workaround
-if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-    set(Python3_EXECUTABLE "/usr/bin/python")
-    set(Python3_FOUND "Yes")
-else()
-    find_package(Python3 COMPONENTS Interpreter )
-endif()
-
-if (NOT Python3_FOUND)
-    message(WARNING "Could not find the program Python3. Target tests disabled.")
-else()
-    message(STATUS "Found Python3: ${Python3_EXECUTABLE}. Target tests enabled.")
-
-    # add a target to generate run tests
-    add_custom_target(tests
-        COMMAND cmake -E rm -rf ${CMAKE_CURRENT_BINARY_DIR}/llvmprof/
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py --insights
-        ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:cppinsights> --cxx ${CMAKE_CXX_COMPILER} ${TEST_FAILURE_IS_OK} ${TEST_USE_LIBCPP} ${LLVM_PROF_DIR}
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/testSTDIN.sh ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:cppinsights>
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/testInvalidOption.sh ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:cppinsights>
-        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:cppinsights> ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests
-        COMMENT "Running tests" VERBATIM
-    )
-endif()
-
-if (NOT WIN32)
-    add_custom_target(update-tests
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py --insights ${CMAKE_CURRENT_BINARY_DIR}/insights --cxx ${CMAKE_CXX_COMPILER} --update-tests ${TEST_FAILURE_IS_OK}
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/testSTDIN.sh ${CMAKE_CURRENT_BINARY_DIR}/insights
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/testInvalidOption.sh ${CMAKE_CURRENT_BINARY_DIR}/insights
-        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/insights ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests
-        COMMENT "Running tests" VERBATIM
-    )
-
-
-    # run tests in a docker container
-    add_custom_target(docker-tests
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh ${CMAKE_CURRENT_BINARY_DIR}/docker_build compile "-DINSIGHTS_STATIC=${INSIGHTS_STATIC} -DINSIGHTS_COVERAGE=${INSIGHTS_COVERAGE} -DDEBUG=${DEBUG} -DINSIGHTS_USE_LIBCPP=${INSIGHTS_USE_LIBCPP}" tests
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
-        COMMENT "Running tests in docker" VERBATIM
-    )
-
-    # run code coverage in docker container
-    add_custom_target(docker-coverage
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh ${CMAKE_CURRENT_BINARY_DIR}/docker_build compile "-DINSIGHTS_STATIC=${INSIGHTS_STATIC} -DINSIGHTS_COVERAGE=Yes -DDEBUG=${DEBUG} -DINSIGHTS_USE_LIBCPP=${INSIGHTS_USE_LIBCPP}" coverage-html
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
-        COMMENT "Running tests in docker" VERBATIM
-    )
-
-    # run tests in a docker container
-    add_custom_target(docker-build
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh ${CMAKE_CURRENT_BINARY_DIR}/docker_build compile "-DINSIGHTS_STATIC=${INSIGHTS_STATIC} -DINSIGHTS_COVERAGE=${INSIGHTS_COVERAGE} -DDEBUG=${DEBUG} -DINSIGHTS_TIDY=${INSIGHTS_TIDY} -DINSIGHTS_USE_LIBCPP=${INSIGHTS_USE_LIBCPP}"
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
-        COMMENT "Building insights in docker" VERBATIM
-    )
-
-    # open a shell in the docker container
-    add_custom_target(docker-build-run
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh ${CMAKE_CURRENT_BINARY_DIR}/docker_build shell
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
-        COMMENT "Open shell in docker" VERBATIM
-    )
-
-    if(CLANG_TIDY_EXE AND INSIGHTS_TIDY)
-        add_custom_command(TARGET insights
-            POST_BUILD
-            COMMAND /bin/bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/clang-tidy-check.sh ${CMAKE_CURRENT_BINARY_DIR}/output.txt ${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy-ignore
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMENT "Analyzing clang-tidy output..."
-        )
-    endif()
-
-    # add_subdirectory(docs)
-endif()
-
-
-# code coverage
-if(INSIGHTS_COVERAGE)
-    if(WIN32)
-        find_program(GRCOV_BIN grcov REQUIRED)
-
-        if(NOT GRCOV_BIN)
-            message(FATAL_ERROR "grcov not found")
-        else()
-            message(STATUS "Found grcov: ${GRCOV_BIN}. Target coverage enabled.")
-
-            llvm_config(LLVM_BIN_DIR "--bindir")
-            get_filename_component(CLANG_ABS_DIR "../" ABSOLUTE BASE_DIR "${LLVM_BIN_DIR}")
-            message(STATUS "${CLANG_ABS_DIR}")
-
-            add_custom_target(coverage
-                COMMAND ${GRCOV_BIN} -s ${CMAKE_CURRENT_SOURCE_DIR} --llvm --ignore "C:\\Program*" --ignore "${CLANG_ABS_DIR}/*" --ignore-not-existing ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/insights.dir -t lcov -o ${CMAKE_CURRENT_BINARY_DIR}/filtered.info
-                DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/insights ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py
-                COMMENT "Running code coverage analysis" VERBATIM
-            )
-
-            add_custom_target(coverage-html
-                COMMAND ${GRCOV_BIN} -s ${CMAKE_CURRENT_SOURCE_DIR} --llvm --ignore "${CMAKE_CURRENT_BINARY_DIR}/../current/*" --ignore-not-existing ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/insights.dir -t html -o ${CMAKE_CURRENT_BINARY_DIR}/out
-                COMMENT "Generating code coverage HTML" VERBATIM
-            )
-        endif()
-    elseif(IS_GNU)
-        find_program(LCOV_BIN lcov)
-        find_program(GENHTML_BIN genhtml)
-        find_package_handle_standard_args(lcov
-            REQUIRED_VARS LCOV_BIN GENHTML_BIN
-        )
-
-        if (NOT LCOV_FOUND)
-            message(FATAL_ERROR "Lcov not found")
-        else()
-            message(STATUS "Target coverage available")
-            message(STATUS "lcov                     : ${LCOV_BIN}")
-
-            set(GCOV_TOOL "")
-            if(IS_GNU)
-                # Find the major version of the CXX compiler to use the corresponding gcov with it
-                string(REPLACE "." ";" CXX_VERSION_LIST "${CMAKE_CXX_COMPILER_VERSION}")
-                list(GET CXX_VERSION_LIST 0 CXX_MAJOR_VERSION)
-                set(GCOV_TOOL --gcov-tool /usr/bin/gcov-${CXX_MAJOR_VERSION})
-            else()
-                #find_program(GCOV_BIN gcov PATHS /usr/local/bin NO_CMAKE_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH NO_DEFAULT_PATH)
-                #find_package_handle_standard_args(gcov REQUIRED_VARS GCOV_BIN)
-
-                #if (NOT GCOV_FOUND)
-                #    message(FATAL_ERROR "gcov not found")
-                #endif()
-
-                #                set(GCOV_TOOL "--gcov-tool ${GCOV_BIN}")
-                set(GCOV_TOOL --gcov-tool /usr/local/bin/gcov-10)
-            endif()
-
-            message(STATUS "gcov_tool                : ${GCOV_TOOL}")
-
-
-            add_custom_target(coverage
-                COMMAND lcov --directory ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/insights.dir ${GCOV_TOOL} --base-directory ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/insights.dir --capture --output-file ${CMAKE_CURRENT_BINARY_DIR}/coverage.info
-                COMMAND lcov --remove ${CMAKE_CURRENT_BINARY_DIR}/coverage.info "/Applications/*" "/usr/*" "/Users/runner/work/cppinsights/cppinsights/current/*" "./current/*" "./build/*" "./cmake*/*" "${CMAKE_CURRENT_BINARY_DIR}" "./cppinsights/docs/*" "./cppinsights/tests/*" -o ${CMAKE_CURRENT_BINARY_DIR}/filtered.info
-                DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/insights ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py
-                COMMENT "Running code coverage analysis" VERBATIM
-            )
-
-            add_custom_target(coverage-html
-                COMMAND genhtml ${CMAKE_CURRENT_BINARY_DIR}/filtered.info --demangle-cpp --output-directory ${CMAKE_CURRENT_BINARY_DIR}/out
-                COMMENT "Generating code coverage HTML" VERBATIM
-            )
-        endif()
-
-    else() # Clang
-        llvm_config(LLVM_BINDIR "--bindir")
-        find_program(LCOV_BIN llvm-cov PATHS ${LLVM_BINDIR})
-        find_program(PROFDATA_BIN llvm-profdata PATHS ${LLVM_BINDIR})
-        #        find_package_handle_standard_args(llvm-lcov
-        #            REQUIRED_VARS LCOV_BIN PROFDATA_BIN
-        #        )
-
-
-        #        if (NOT LCOV_FOUND)
-        #            message(FATAL_ERROR "llvm-cov not found")
-        #        elseif (NOT PROFDATA_FOUND)
-        #            message(FATAL_ERROR "llvm-profdata not found")
-        #        else()
-            message(STATUS "Target coverage available")
-            message(STATUS "lcov                     : ${LCOV_BIN}")
-            message(STATUS "llvm-profdata            : ${PROFDATA_BIN}")
-
-            # https://clang.llvm.org/docs/SourceBasedCodeCoverage.html
-            add_custom_target(coverage
-                COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/llvm-coverage.py --insights ${CMAKE_CURRENT_BINARY_DIR}/insights --llvm-prof-dir=${CMAKE_CURRENT_BINARY_DIR}/llvmprof/ --format=text  --output=${CMAKE_CURRENT_BINARY_DIR}/filtered.info --llvm-cov ${LCOV_BIN} --llvm-prof ${PROFDATA_BIN}
-                DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/insights ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py
-                COMMENT "Running code coverage analysis" VERBATIM
-            )
-
-            add_custom_target(coverage-html
-                COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/llvm-coverage.py --insights
-                ${CMAKE_CURRENT_BINARY_DIR}/insights --llvm-prof-dir=${CMAKE_CURRENT_BINARY_DIR}/llvmprof/ --format=lcov --output=${CMAKE_CURRENT_BINARY_DIR}/filtered.lcov --llvm-cov ${LCOV_BIN} --llvm-prof ${PROFDATA_BIN}
-                COMMAND genhtml ${CMAKE_CURRENT_BINARY_DIR}/filtered.lcov --demangle-cpp --output-directory ${CMAKE_CURRENT_BINARY_DIR}/out --keep-going
-                COMMENT "Generating code coverage HTML" VERBATIM
-            )
-
-        #        endif()
-    endif()
-
-    add_dependencies(coverage tests)
-    add_dependencies(coverage-html coverage)
-
-endif()
+# # Look for Python3, only relevant for target tests. As linux currently ships cmake 3.11.4 we need to workaround
+# if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
+#     set(Python3_EXECUTABLE "/usr/bin/python")
+#     set(Python3_FOUND "Yes")
+# else()
+#     find_package(Python3 COMPONENTS Interpreter )
+# endif()
+#
+# if (NOT Python3_FOUND)
+#     message(WARNING "Could not find the program Python3. Target tests disabled.")
+# else()
+#     message(STATUS "Found Python3: ${Python3_EXECUTABLE}. Target tests enabled.")
+#
+#     # add a target to generate run tests
+#     add_custom_target(tests
+#         COMMAND cmake -E rm -rf ${CMAKE_CURRENT_BINARY_DIR}/llvmprof/
+#         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py --insights
+#         ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:cppinsights> --cxx ${CMAKE_CXX_COMPILER} ${TEST_FAILURE_IS_OK} ${TEST_USE_LIBCPP} ${LLVM_PROF_DIR}
+#         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/testSTDIN.sh ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:cppinsights>
+#         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/testInvalidOption.sh ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:cppinsights>
+#         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:cppinsights> ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py
+#         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests
+#         COMMENT "Running tests" VERBATIM
+#     )
+# endif()
+#
+# if (NOT WIN32)
+#     add_custom_target(update-tests
+#         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py --insights ${CMAKE_CURRENT_BINARY_DIR}/insights --cxx ${CMAKE_CXX_COMPILER} --update-tests ${TEST_FAILURE_IS_OK}
+#         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/testSTDIN.sh ${CMAKE_CURRENT_BINARY_DIR}/insights
+#         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/testInvalidOption.sh ${CMAKE_CURRENT_BINARY_DIR}/insights
+#         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/insights ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py
+#         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests
+#         COMMENT "Running tests" VERBATIM
+#     )
+#
+#
+#     # run tests in a docker container
+#     add_custom_target(docker-tests
+#         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh ${CMAKE_CURRENT_BINARY_DIR}/docker_build compile "-DINSIGHTS_STATIC=${INSIGHTS_STATIC} -DINSIGHTS_COVERAGE=${INSIGHTS_COVERAGE} -DDEBUG=${DEBUG} -DINSIGHTS_USE_LIBCPP=${INSIGHTS_USE_LIBCPP}" tests
+#         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh
+#         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
+#         COMMENT "Running tests in docker" VERBATIM
+#     )
+#
+#     # run code coverage in docker container
+#     add_custom_target(docker-coverage
+#         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh ${CMAKE_CURRENT_BINARY_DIR}/docker_build compile "-DINSIGHTS_STATIC=${INSIGHTS_STATIC} -DINSIGHTS_COVERAGE=Yes -DDEBUG=${DEBUG} -DINSIGHTS_USE_LIBCPP=${INSIGHTS_USE_LIBCPP}" coverage-html
+#         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh
+#         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
+#         COMMENT "Running tests in docker" VERBATIM
+#     )
+#
+#     # run tests in a docker container
+#     add_custom_target(docker-build
+#         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh ${CMAKE_CURRENT_BINARY_DIR}/docker_build compile "-DINSIGHTS_STATIC=${INSIGHTS_STATIC} -DINSIGHTS_COVERAGE=${INSIGHTS_COVERAGE} -DDEBUG=${DEBUG} -DINSIGHTS_TIDY=${INSIGHTS_TIDY} -DINSIGHTS_USE_LIBCPP=${INSIGHTS_USE_LIBCPP}"
+#         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh
+#         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
+#         COMMENT "Building insights in docker" VERBATIM
+#     )
+#
+#     # open a shell in the docker container
+#     add_custom_target(docker-build-run
+#         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh ${CMAKE_CURRENT_BINARY_DIR}/docker_build shell
+#         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scripts/docker-shell.sh
+#         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
+#         COMMENT "Open shell in docker" VERBATIM
+#     )
+#
+#     if(CLANG_TIDY_EXE AND INSIGHTS_TIDY)
+#         add_custom_command(TARGET insights
+#             POST_BUILD
+#             COMMAND /bin/bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/clang-tidy-check.sh ${CMAKE_CURRENT_BINARY_DIR}/output.txt ${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy-ignore
+#             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+#             COMMENT "Analyzing clang-tidy output..."
+#         )
+#     endif()
+#
+#     # add_subdirectory(docs)
+# endif()
+#
+#
+# # code coverage
+# if(INSIGHTS_COVERAGE)
+#     if(WIN32)
+#         find_program(GRCOV_BIN grcov REQUIRED)
+#
+#         if(NOT GRCOV_BIN)
+#             message(FATAL_ERROR "grcov not found")
+#         else()
+#             message(STATUS "Found grcov: ${GRCOV_BIN}. Target coverage enabled.")
+#
+#             llvm_config(LLVM_BIN_DIR "--bindir")
+#             get_filename_component(CLANG_ABS_DIR "../" ABSOLUTE BASE_DIR "${LLVM_BIN_DIR}")
+#             message(STATUS "${CLANG_ABS_DIR}")
+#
+#             add_custom_target(coverage
+#                 COMMAND ${GRCOV_BIN} -s ${CMAKE_CURRENT_SOURCE_DIR} --llvm --ignore "C:\\Program*" --ignore "${CLANG_ABS_DIR}/*" --ignore-not-existing ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/insights.dir -t lcov -o ${CMAKE_CURRENT_BINARY_DIR}/filtered.info
+#                 DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/insights ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py
+#                 COMMENT "Running code coverage analysis" VERBATIM
+#             )
+#
+#             add_custom_target(coverage-html
+#                 COMMAND ${GRCOV_BIN} -s ${CMAKE_CURRENT_SOURCE_DIR} --llvm --ignore "${CMAKE_CURRENT_BINARY_DIR}/../current/*" --ignore-not-existing ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/insights.dir -t html -o ${CMAKE_CURRENT_BINARY_DIR}/out
+#                 COMMENT "Generating code coverage HTML" VERBATIM
+#             )
+#         endif()
+#     elseif(IS_GNU)
+#         find_program(LCOV_BIN lcov)
+#         find_program(GENHTML_BIN genhtml)
+#         find_package_handle_standard_args(lcov
+#             REQUIRED_VARS LCOV_BIN GENHTML_BIN
+#         )
+#
+#         if (NOT LCOV_FOUND)
+#             message(FATAL_ERROR "Lcov not found")
+#         else()
+#             message(STATUS "Target coverage available")
+#             message(STATUS "lcov                     : ${LCOV_BIN}")
+#
+#             set(GCOV_TOOL "")
+#             if(IS_GNU)
+#                 # Find the major version of the CXX compiler to use the corresponding gcov with it
+#                 string(REPLACE "." ";" CXX_VERSION_LIST "${CMAKE_CXX_COMPILER_VERSION}")
+#                 list(GET CXX_VERSION_LIST 0 CXX_MAJOR_VERSION)
+#                 set(GCOV_TOOL --gcov-tool /usr/bin/gcov-${CXX_MAJOR_VERSION})
+#             else()
+#                 #find_program(GCOV_BIN gcov PATHS /usr/local/bin NO_CMAKE_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH NO_DEFAULT_PATH)
+#                 #find_package_handle_standard_args(gcov REQUIRED_VARS GCOV_BIN)
+#
+#                 #if (NOT GCOV_FOUND)
+#                 #    message(FATAL_ERROR "gcov not found")
+#                 #endif()
+#
+#                 #                set(GCOV_TOOL "--gcov-tool ${GCOV_BIN}")
+#                 set(GCOV_TOOL --gcov-tool /usr/local/bin/gcov-10)
+#             endif()
+#
+#             message(STATUS "gcov_tool                : ${GCOV_TOOL}")
+#
+#
+#             add_custom_target(coverage
+#                 COMMAND lcov --directory ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/insights.dir ${GCOV_TOOL} --base-directory ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/insights.dir --capture --output-file ${CMAKE_CURRENT_BINARY_DIR}/coverage.info
+#                 COMMAND lcov --remove ${CMAKE_CURRENT_BINARY_DIR}/coverage.info "/Applications/*" "/usr/*" "/Users/runner/work/cppinsights/cppinsights/current/*" "./current/*" "./build/*" "./cmake*/*" "${CMAKE_CURRENT_BINARY_DIR}" "./cppinsights/docs/*" "./cppinsights/tests/*" -o ${CMAKE_CURRENT_BINARY_DIR}/filtered.info
+#                 DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/insights ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py
+#                 COMMENT "Running code coverage analysis" VERBATIM
+#             )
+#
+#             add_custom_target(coverage-html
+#                 COMMAND genhtml ${CMAKE_CURRENT_BINARY_DIR}/filtered.info --demangle-cpp --output-directory ${CMAKE_CURRENT_BINARY_DIR}/out
+#                 COMMENT "Generating code coverage HTML" VERBATIM
+#             )
+#         endif()
+#
+#     else() # Clang
+#         llvm_config(LLVM_BINDIR "--bindir")
+#         find_program(LCOV_BIN llvm-cov PATHS ${LLVM_BINDIR})
+#         find_program(PROFDATA_BIN llvm-profdata PATHS ${LLVM_BINDIR})
+#         #        find_package_handle_standard_args(llvm-lcov
+#         #            REQUIRED_VARS LCOV_BIN PROFDATA_BIN
+#         #        )
+#
+#
+#         #        if (NOT LCOV_FOUND)
+#         #            message(FATAL_ERROR "llvm-cov not found")
+#         #        elseif (NOT PROFDATA_FOUND)
+#         #            message(FATAL_ERROR "llvm-profdata not found")
+#         #        else()
+#             message(STATUS "Target coverage available")
+#             message(STATUS "lcov                     : ${LCOV_BIN}")
+#             message(STATUS "llvm-profdata            : ${PROFDATA_BIN}")
+#
+#             # https://clang.llvm.org/docs/SourceBasedCodeCoverage.html
+#             add_custom_target(coverage
+#                 COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/llvm-coverage.py --insights ${CMAKE_CURRENT_BINARY_DIR}/insights --llvm-prof-dir=${CMAKE_CURRENT_BINARY_DIR}/llvmprof/ --format=text  --output=${CMAKE_CURRENT_BINARY_DIR}/filtered.info --llvm-cov ${LCOV_BIN} --llvm-prof ${PROFDATA_BIN}
+#                 DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/insights ${CMAKE_CURRENT_SOURCE_DIR}/tests/runTest.py
+#                 COMMENT "Running code coverage analysis" VERBATIM
+#             )
+#
+#             add_custom_target(coverage-html
+#                 COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/llvm-coverage.py --insights
+#                 ${CMAKE_CURRENT_BINARY_DIR}/insights --llvm-prof-dir=${CMAKE_CURRENT_BINARY_DIR}/llvmprof/ --format=lcov --output=${CMAKE_CURRENT_BINARY_DIR}/filtered.lcov --llvm-cov ${LCOV_BIN} --llvm-prof ${PROFDATA_BIN}
+#                 COMMAND genhtml ${CMAKE_CURRENT_BINARY_DIR}/filtered.lcov --demangle-cpp --output-directory ${CMAKE_CURRENT_BINARY_DIR}/out --keep-going
+#                 COMMENT "Generating code coverage HTML" VERBATIM
+#             )
+#
+#         #        endif()
+#     endif()
+#
+#     add_dependencies(coverage tests)
+#     add_dependencies(coverage-html coverage)
+#
+# endif()
 
 message(STATUS "")
 message(STATUS "[ Build summary ]")
