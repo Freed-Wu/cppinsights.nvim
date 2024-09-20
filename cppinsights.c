@@ -15,6 +15,7 @@ static int insights(lua_State *L) {
     argv[i_max + i + 1] = lua_tostring(L, i);
   }
   lua_pushstring(L, Cppinsights(i_max, argv));
+  free(argv);
   return 1;
 }
 
