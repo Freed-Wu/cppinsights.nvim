@@ -8,5 +8,8 @@ mkShell {
     ninja
     llvm.dev
     libclang.dev
+    pkg-config
+    luajit
+    stdenv.cc
   ];
 }
