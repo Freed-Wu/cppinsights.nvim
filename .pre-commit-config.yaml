@@ -9,6 +9,7 @@ repos:
       - id: check-shebang-scripts-are-executable
       - id: check-merge-conflict
       - id: trailing-whitespace
+        exclude: ^spec/output\.cc$
       - id: mixed-line-ending
       - id: end-of-file-fixer
       - id: detect-private-key
