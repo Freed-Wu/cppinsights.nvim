@@ -1,3 +1,5 @@
+_readthedocs/
+
 /.cache/
 /build/
 /build.luarocks/

@@ -1,5 +1,6 @@
 # Neovim extension for [C++ Insights](https://github.com/andreasfertig/cppinsights)
 
+[![readthedocs](https://shields.io/readthedocs/cppinsights-nvim)](https://cppinsights-nvim.readthedocs.io)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Freed-Wu/cppinsights.nvim/main.svg)](https://results.pre-commit.ci/latest/github/Freed-Wu/cppinsights.nvim/main)
 [![github/workflow](https://github.com/Freed-Wu/cppinsights.nvim/actions/workflows/main.yml/badge.svg)](https://github.com/Freed-Wu/cppinsights.nvim/actions)
 
