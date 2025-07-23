@@ -11,8 +11,7 @@ do
         "https://github.com/andreasfertig/cppinsights.git")
     add_versions("20.1", "672ecc237bc0231510025c9662c0f4880feebb076af46d16840adfb16e8fc4e8")
 
-    -- libclang
-    add_deps("cmake", "ninja", "llvm")
+    add_deps("cmake", "ninja", "llvm", "clang")
 
     on_install(function(package)
         io.replace("CMakeLists.txt", "add_executable", "add_library", { plain = true })
