@@ -21,7 +21,4 @@ mkShell {
       ]
     ))
   ];
-  shellHook = ''
-    export CMAKE_GENERATOR=Ninja
-  '';
 }
