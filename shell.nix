@@ -1,17 +1,18 @@
-{ pkgs ? import <nixpkgs> { } }:
+{
+  pkgs ? import <nixpkgs> { },
+}:
 
 with pkgs;
 mkShell {
   name = "cppinsights.nvim";
   buildInputs = [
-    stdenv.cc
     pkg-config
     cmake
     ninja
+    xmake
 
-    llvm.dev
-
-    libclang.dev
+    llvmPackages_latest.llvm
+    llvmPackages_latest.libclang
 
     (luajit.withPackages (
       p: with p; [

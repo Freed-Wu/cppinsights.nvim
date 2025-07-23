@@ -15,12 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: xmake-io/github-action-setup-xmake@v1
+      - uses: cachix/install-nix-action@v30
         with:
-          submodules: true
-      - name: Install dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt-get -y install llvm-dev libclang-dev
+          nix_path: nixpkgs=channel:nixos-unstable
+      - run: |
+          nix-env -f '<nixpkgs>' -iA llvmPackages_latest.llvm.dev \
+            llvmPackages_latest.libclang.dev
       - uses: nvim-neorocks/luarocks-tag-release@v5
         env:
           LUAROCKS_API_KEY: ${{secrets.LUAROCKS_API_KEY}}

@@ -32,14 +32,12 @@ if modrev == 'scm' or modrev == 'dev' then
 end
 
 build = {
-    type = 'cmake',
-    copy_directories = $copy_directories,
-    variables = {
-         CFLAGS = '$(CFLAGS)',
-         LIBFLAG = '$(LIBFLAG)',
-         LUA_LIBDIR = '$(LUA_LIBDIR)',
-         LUA_INCDIR = '$(LUA_INCDIR)',
-         LIBDIR = '$(LIBDIR)',
-         LUADIR = '$(LUA_LIBFILE)',
-    }
+  type = 'xmake',
+  copy_directories = $copy_directories,
+  install = {
+    conf = {
+      ['..'] = 'shell.nix',
+      ['../scripts/update.sh'] = 'scripts/update.sh',
+    },
+  },
 }
