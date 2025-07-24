@@ -12,7 +12,7 @@ do
     add_files("*.cpp", "*.c")
     add_packages("cppinsights", "llvm")
     if os.getenv "CXXFLAGS" then
-        add_cflags(os.getenv "CXXFLAGS")
+        add_cxxflags(os.getenv "CXXFLAGS")
     end
     if os.getenv "LDFLAGS" then
         add_ldflags(os.getenv "LDFLAGS")
