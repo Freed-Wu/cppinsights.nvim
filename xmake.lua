@@ -11,12 +11,12 @@ do
     add_rules("lua.module")
     add_files("*.cpp", "*.c")
     add_packages("cppinsights", "llvm")
-    add_links("LLVM-20", "clang-cpp")
+    add_links("clang-cpp")
 
     local profile = os.getenv "NIX_PROFILES"
     if profile then
         profile = profile:gsub(".* ", "")
-        add_includedirs(profile .. "/include")
-        add_linkdirs(profile .. "/lib")
+        add_includedirs(path.join(profile, "include"))
+        add_linkdirs(path.join(profile, "lib"))
     end
 end
