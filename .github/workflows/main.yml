@@ -23,8 +23,9 @@ jobs:
             experimental-features = nix-command flakes
             access-tokens = github.com=${{secrets.GITHUB_TOKEN}}
       - run: |
-          nix-env -f '<nixpkgs>' -iA llvmPackages_latest.llvm.dev \
-            llvmPackages_latest.libclang.dev
+          nix-env -f '<nixpkgs>' -iA \
+            llvmPackages_latest.llvm.dev llvmPackages_latest.llvm.lib \
+            llvmPackages_latest.libclang.dev llvmPackages_latest.libclang.lib
       - uses: nvim-neorocks/luarocks-tag-release@v5
         env:
           LUAROCKS_API_KEY: ${{secrets.LUAROCKS_API_KEY}}

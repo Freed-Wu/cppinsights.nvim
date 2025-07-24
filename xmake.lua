@@ -13,10 +13,15 @@ do
     add_packages("cppinsights", "llvm")
     add_links("clang-cpp")
 
-    local profile = os.getenv "NIX_PROFILES"
-    if profile then
-        profile = profile:gsub(".* ", "")
-        add_includedirs(path.join(profile, "include"))
-        add_linkdirs(path.join(profile, "lib"))
+    local profiles = os.getenv "NIX_PROFILES" or ""
+    for profile in profiles:gmatch("%S+") do
+        local dir = path.join(profile, "include")
+        if os.isdir(dir) then
+            add_includedirs(dir)
+        end
+        dir = path.join(profile, "lib")
+        if os.isdir(dir) then
+            add_linkdirs(dir)
+        end
     end
 end
