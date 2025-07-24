@@ -16,6 +16,9 @@ do
     on_install(function(package)
         io.replace("CMakeLists.txt", "add_executable", "add_library", { plain = true })
         io.replace("CMakeLists.txt", "Insights.cpp", "", { plain = true })
+        io.replace("CMakeLists.txt", "if(INSIGHTS_USE_SYSTEM_INCLUDES)",
+            [[string(REGEX REPLACE "-I/usr/include" "" CONFIG_OUTPUT "${CONFIG_OUTPUT}")
+if(INSIGHTS_USE_SYSTEM_INCLUDES)]], { plain = true })
         io.replace("CMakeLists.txt", "install( TARGETS insights RUNTIME DESTINATION bin )",
             [[install( TARGETS insights RUNTIME )
 include(GNUInstallDirs)
@@ -24,7 +27,6 @@ install( FILES ${HEADER_FILES} ${CMAKE_BINARY_DIR}/generated/version.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} )]], { plain = true })
         import("package.tools.cmake").install(package, { '-GNinja',
             '-DINSIGHTS_STRIP=OFF',
-            '-DINSIGHTS_USE_SYSTEM_INCLUDES=off',
             '-DCLANG_LINK_CLANG_DYLIB=ON',
             '-DLLVM_LINK_LLVM_DYLIB=ON' })
     end)
