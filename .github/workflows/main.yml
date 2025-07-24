@@ -28,6 +28,7 @@ jobs:
       - uses: nvim-neorocks/luarocks-tag-release@v5
         env:
           LUAROCKS_API_KEY: ${{secrets.LUAROCKS_API_KEY}}
+          NIX_PROFILES: /home/runner/.local/state/nix/profiles/profile
           CXXFLAGS: >
             -isystem/home/runner/.local/state/nix/profiles/profile/include
           LDFLAGS: >
@@ -41,6 +42,7 @@ jobs:
       - uses: nvim-neorocks/luarocks-tag-release@v5
         env:
           LUAROCKS_API_KEY: ${{secrets.LUAROCKS_API_KEY}}
+          NIX_PROFILES: /home/runner/.local/state/nix/profiles/profile
           CXXFLAGS: >
             -isystem/home/runner/.local/state/nix/profiles/profile/include
           LDFLAGS: >
