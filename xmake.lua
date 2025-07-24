@@ -12,10 +12,11 @@ do
     add_files("*.cpp", "*.c")
     add_packages("cppinsights", "llvm")
     add_links("LLVM-20", "clang-cpp")
-    if os.getenv "CXXFLAGS" then
-        add_cxxflags(os.getenv "CXXFLAGS")
-    end
-    if os.getenv "LDFLAGS" then
-        add_ldflags(os.getenv "LDFLAGS")
+
+    local profile = os.getenv "NIX_PROFILES"
+    if profile then
+        profile = profile:gsub(".* ", "")
+        add_includedirs(profile .. "/include")
+        add_linkdirs(profile .. "/lib")
     end
 end
