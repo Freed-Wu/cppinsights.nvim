@@ -81,7 +81,8 @@ $ luarocks --lua-version 5.1 --local --tree ~/.local/share/nvim/rocks install cp
 
 ## Configure
 
-Refer [config.lua](lua/cppinsights/config.lua):
+Refer
+[config.lua](https://cppinsights-nvim.readthedocs.io/en/latest/modules/lua.cppinsights.config.html):
 
 ```lua
 require('cppinsights.nvim').setup({
