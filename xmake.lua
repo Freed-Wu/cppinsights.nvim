@@ -11,8 +11,8 @@ do
     add_rules("lua.module")
     add_files("*.cpp", "*.c")
     add_packages("cppinsights", "llvm")
-    if os.getenv "CFLAGS" then
-        add_cflags(os.getenv "CFLAGS")
+    if os.getenv "CXXFLAGS" then
+        add_cflags(os.getenv "CXXFLAGS")
     end
     if os.getenv "LDFLAGS" then
         add_ldflags(os.getenv "LDFLAGS")
