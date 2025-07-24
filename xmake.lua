@@ -11,6 +11,7 @@ do
     add_rules("lua.module")
     add_files("*.cpp", "*.c")
     add_packages("cppinsights", "llvm")
+    add_links("LLVM-20", "clang-cpp")
     if os.getenv "CXXFLAGS" then
         add_cxxflags(os.getenv "CXXFLAGS")
     end

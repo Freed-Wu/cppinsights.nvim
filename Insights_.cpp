@@ -42,6 +42,12 @@ const InsightsOptions& GetInsightsOptions()
 }
 //-----------------------------------------------------------------------------
 
+InsightsOptions& GetInsightsOptionsRW()
+{
+    return gInsightsOptions;
+}
+//-----------------------------------------------------------------------------
+
 static llvm::cl::OptionCategory gInsightCategory("Insights"sv);
 //-----------------------------------------------------------------------------
 
@@ -59,9 +65,6 @@ static llvm::cl::opt<bool> gStdinMode("stdin",
 
 static llvm::cl::opt<bool>
     gUseLibCpp("use-libc++", llvm::cl::desc("Use libc++."sv), llvm::cl::init(false), llvm::cl::cat(gInsightCategory));
-
-static llvm::cl::opt<std::string>
-    gOutput("output", llvm::cl::desc("Redirect output into a file."sv), llvm::cl::init(""), llvm::cl::cat(gInsightCategory));
 //-----------------------------------------------------------------------------
 
 #define INSIGHTS_OPT(option, name, deflt, description, category)                                                       \
@@ -135,7 +138,8 @@ public:
                             StringRef /*SearchPath*/,
                             StringRef /*RelativePath*/,
                             const Module* /*Imported*/,
-                            SrcMgr::CharacteristicKind /*FileType*/) //override
+                            bool /*ModuleImported*/,
+                            SrcMgr::CharacteristicKind /*FileType*/) override
     {
         auto expansionLoc = mSm.getExpansionLoc(hashLoc);
 
