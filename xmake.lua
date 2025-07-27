@@ -4,10 +4,7 @@ includes("packages/c/cppinsights")
 add_rules("mode.debug", "mode.release")
 
 set_languages("c++20")
-local profiles = os.getenv "NIX_PROFILES" or ""
--- static link for Nix
-add_requires("cppinsights", { configs = { shared = profiles == "" } })
--- warning: configs.shared is readonly in package(llvm), it's always false
+add_requires("cppinsights", { configs = { dylib = true } })
 add_requires("llvm")
 
 target("cppinsights")
@@ -15,10 +12,9 @@ do
     add_rules("lua.module")
     add_files("*.cpp", "*.c")
     add_packages("cppinsights", "llvm")
-    if profiles == "" then
-        add_links("clang-cpp")
-    end
+    add_links("clang-cpp")
 
+    local profiles = os.getenv "NIX_PROFILES" or ""
     for profile in profiles:gmatch("%S+") do
         local dir = path.join(profile, "include")
         if os.isdir(dir) then
