@@ -34,4 +34,10 @@ end
 build = {
   type = 'xmake',
   copy_directories = $copy_directories,
+  install = {
+    conf = {
+      ['..'] = 'shell.nix',
+      ['../scripts/update.sh'] = 'scripts/update.sh',
+    },
+  },
 }
