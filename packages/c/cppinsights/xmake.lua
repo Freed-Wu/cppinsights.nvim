@@ -27,8 +27,8 @@ install( FILES ${HEADER_FILES} ${CMAKE_BINARY_DIR}/generated/version.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} )]], { plain = true })
         import("package.tools.cmake").install(package, { '-GNinja',
             '-DINSIGHTS_STRIP=OFF',
-            '-DCLANG_LINK_CLANG_DYLIB=ON',
-            '-DLLVM_LINK_LLVM_DYLIB=ON' })
+            '-DCLANG_LINK_CLANG_DYLIB=' .. (package:config("shared") and 'ON' or "OFF"),
+            '-DLLVM_LINK_LLVM_DYLIB=' .. (package:config("shared") and 'ON' or "OFF") })
     end)
 end
 package_end()
