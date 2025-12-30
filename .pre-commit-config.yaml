@@ -1,7 +1,7 @@
 ---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: fix-byte-order-marker
@@ -38,7 +38,7 @@ repos:
         args:
           - --msg-filename
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 3.2.1
+    rev: 3.6.0
     hooks:
       - id: editorconfig-checker
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
@@ -46,7 +46,7 @@ repos:
     hooks:
       - id: check-mailmap
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.7
+    rev: v1.7.9
     hooks:
       - id: actionlint
   - repo: https://github.com/adrienverge/yamllint
@@ -54,7 +54,7 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.22
+    rev: 1.0.0
     hooks:
       - id: mdformat
         additional_dependencies:
@@ -63,12 +63,12 @@ repos:
           - mdformat-myst
           - mdformat-toc
           - mdformat-deflist
-          # - mdformat-beautysh
+          - mdformat-beautysh
           - mdformat-ruff
           - mdformat-config
           - mdformat-web
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.18.1
+    rev: v0.20.0
     hooks:
       - id: markdownlint-cli2
         additional_dependencies:
@@ -91,6 +91,6 @@ repos:
   #   hooks:
   #     - id: neocmakelsp-format
   - repo: https://github.com/NixOS/nixfmt
-    rev: v1.0.0
+    rev: v1.1.0
     hooks:
       - id: nixfmt
