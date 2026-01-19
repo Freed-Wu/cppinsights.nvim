@@ -22,7 +22,7 @@ repos:
       - id: check-toml
       - id: check-json
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
+    rev: v1.5.6
     hooks:
       - id: remove-crlf
   - repo: https://github.com/codespell-project/codespell
@@ -46,11 +46,11 @@ repos:
     hooks:
       - id: check-mailmap
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.9
+    rev: v1.7.10
     hooks:
       - id: actionlint
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.37.1
+    rev: v1.38.0
     hooks:
       - id: yamllint
   - repo: https://github.com/executablebooks/mdformat
@@ -91,6 +91,6 @@ repos:
   #   hooks:
   #     - id: neocmakelsp-format
   - repo: https://github.com/NixOS/nixfmt
-    rev: v1.1.0
+    rev: v1.2.0
     hooks:
       - id: nixfmt
